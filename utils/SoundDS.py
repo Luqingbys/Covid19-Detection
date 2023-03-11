@@ -74,7 +74,7 @@ class InitialSoundDS(Dataset):
         # 获取到数据集的标签
         class_id = self.df.loc[idx, 'label']
 
-        audio_file = 'G:/深度学习/小项目/新冠检测/Classifier-Model/'+audio_file
+        audio_file = '/home/mist/mywork/Covid19-Detection/'+audio_file
         # print('sound: ', audio_file)
         data, sr = torchaudio.load(audio_file)
         # 返回的是经过处理后的第idx项数据、其标签

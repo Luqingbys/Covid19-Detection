@@ -10,7 +10,8 @@ from model.complexNet import ComplexNet
 # ----------------------------
 # Training Loop
 # ----------------------------
-def training(model: nn.Module, train_dl, num_epochs, device):
+def training(model: nn.Module, train_dl, num_epochs, logger, device):
+    logger.info('Start training!')
     # 损失函数使用交叉熵
     criterion = nn.CrossEntropyLoss()
     # 优化器使用Adam
@@ -38,14 +39,13 @@ def training(model: nn.Module, train_dl, num_epochs, device):
             optimizer.zero_grad()
             # 经过模型计算出来的结果，是一个二维向量
             outputs = model(inputs)
-            print(type(outputs), type(labels))
+            # print(type(outputs), type(labels))
             loss = criterion(outputs, labels.long()) # 损失函数定义中，target必须为long
             # 反向传播
             loss.backward()
             optimizer.step()
             scheduler.step()
             running_loss += loss.item()
-
 
             _, prediction = torch.max(outputs,1)
 
@@ -58,6 +58,7 @@ def training(model: nn.Module, train_dl, num_epochs, device):
         num_batches = len(train_dl)
         avg_loss = running_loss / num_batches
         acc = correct_prediction/total_prediction
-        print(f'Epoch: {epoch}, Loss: {avg_loss:.2f}, Accuracy: {acc:.2f}')
+        # print(f'Epoch: {epoch}, Loss: {avg_loss:.2f}, Accuracy: {acc:.2f}')
+        logger.info('Epoch:[{}/{}]\t average loss={:.5f}\t total loss={:.5f}\t acc={:.3f}'.format(epoch+1 , num_epochs, avg_loss, running_loss, acc ))
         
-    print('Finished Training')
+    logger.info('Finished Training')

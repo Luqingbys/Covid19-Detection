@@ -67,7 +67,7 @@ class ConvSTFT(nn.Module):
     def forward(self, inputs):
         if inputs.dim() == 2:  # inputs: (1, 1, 128000)
             inputs = torch.unsqueeze(inputs, 1)
-        print('in ConvSTFT: ', inputs.shape)
+        # print('in ConvSTFT: ', inputs.shape)
         inputs = F.pad(
             inputs, [self.win_len-self.stride, self.win_len-self.stride])  # F.pad()填充，从(1, 1, 128000)的第二维度左边、右边填充 self.win_len-self.stride=160 个0
         # 卷积核kernel使用上面init_kernels()得到的核，相比于conv2d，conv1d接收的张量尺寸中有一维被忽略
@@ -218,9 +218,9 @@ class ComplexConv2d(nn.Module):
         else:
             if isinstance(inputs, torch.Tensor):
                 real, imag = torch.chunk(inputs, 2, self.complex_axis) # chunk()数组拆分，沿着指定维度拆分为指定数量的tensor
-            print('before this ComplexConv2d: ')
-            print('实部：', real.shape)
-            print('虚部：', imag.shape)
+            # print('before this ComplexConv2d: ')
+            # print('实部：', real.shape)
+            # print('虚部：', imag.shape)
             real2real = self.real_conv(real,)
             imag2imag = self.imag_conv(imag,)
 
@@ -541,7 +541,7 @@ class ComplexNet(nn.Module):
 
         out = complex_data
         encoder_out = []
-        print('before encoders: ', out.shape)
+        # print('before encoders: ', out.shape)
 
         # 通过Encoder
         for idx, layer in enumerate(self.encoder):
@@ -550,12 +550,12 @@ class ComplexNet(nn.Module):
             encoder_out.append(out)
 
         # out尺寸为四维: (B, C, D, L)
-        print('after encoders: ', out.shape)
+        # print('after encoders: ', out.shape)
         batch_size, channels, dims, lengths = out.size()
         out = out.permute(3, 0, 1, 2) # 将out进行转置操作, out: (L, B, C, D)
 
         # 通过lstm
-        print('before clstm: ', out.shape)
+        # print('before clstm: ', out.shape)
         if self.use_clstm:
             r_rnn_in = out[:, :, :channels//2]
             i_rnn_in = out[:, :, channels//2:]
@@ -571,7 +571,7 @@ class ComplexNet(nn.Module):
             i_rnn_in = torch.reshape(
                 i_rnn_in, [lengths, batch_size, channels//2, dims])
             out = torch.cat([r_rnn_in, i_rnn_in], 2)
-            print('after clstm: ', out.shape)
+            # print('after clstm: ', out.shape)
         else:
             # to [L, B, C, D]
             out = torch.reshape(out, [lengths, batch_size, channels*dims]) # out: (L, B, C*D)
@@ -579,34 +579,34 @@ class ComplexNet(nn.Module):
             out = self.tranform(out)
             out = torch.reshape(out, [lengths, batch_size, channels, dims]) # out: (L, B, C, D)
 
-        print('the final output: ', out.shape)
+        # print('the final output: ', out.shape)
         out = out.permute(1, 2, 3, 0) # out: (B, C, D, L)
-        print('after permute: ', out.shape)
+        # print('after permute: ', out.shape)
         out = self.avg(out) # out: (B, C, ffn_input) == (B, C, D, L), ffn_input==(D, L)
-        print('after avg: ', out.shape)
+        # print('after avg: ', out.shape)
         out = out.view(out.shape[0], -1) # out: (B, C*D*L)
-        print('before linear: ', out.shape)
+        # print('before linear: ', out.shape)
         out = self.linear(out)
         return out.float()
     
 
     def get_amp_phase(self, inputs, lens=None):
-        print('======== module dc_crn.py, DCCRN ========')
-        print('inputs: ', inputs.shape)
+        # print('======== module dc_crn.py, DCCRN ========')
+        # print('inputs: ', inputs.shape)
         specs = self.stft(inputs) # specs尺寸为二维，这就是频域信号
-        print('after ConvSTFT: ', specs.shape)
+        # print('after ConvSTFT: ', specs.shape)
         real = specs[:, :self.fft_len//2+1]
         imag = specs[:, self.fft_len//2+1:]
         # 振幅信息
         spec_mags = torch.sqrt(real**2+imag**2+1e-8) # 振幅，即实部和虚部的平方和的算术平方根
         spec_mags = spec_mags
-        print('振幅: ', spec_mags.shape)
+        # print('振幅: ', spec_mags.shape)
         # 相位信息
         spec_phase = torch.atan2(imag, real) # 相位，即虚部与实部的比值的反正切函数值
         spec_phase = spec_phase
-        print('相位: ', spec_phase.shape)
+        # print('相位: ', spec_phase.shape)
 
         cspecs = torch.stack([real, imag], 1)
         cspecs = cspecs[:, :, 1:]
-        print('实部和虚部: ', cspecs.shape)
+        # print('实部和虚部: ', cspecs.shape)
         return cspecs
